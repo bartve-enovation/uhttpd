@@ -429,7 +429,9 @@ static int uh_path_match(const char *prefix, const char *url)
 static bool uh_dispatch_request(struct client *cl, struct http_request *req)
 {
 	struct path_info *pin;
+#ifdef HAVE_CGI
 	struct interpreter *ipr = NULL;
+#endif
 	struct config *conf = cl->server->conf;
 
 #ifdef HAVE_LUA
