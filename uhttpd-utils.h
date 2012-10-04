@@ -25,6 +25,13 @@
 
 #include <libubox/uloop.h>
 
+#ifdef __APPLE__
+static inline void clearenv(void)
+{
+	extern char **environ;
+	environ = NULL;
+}
+#endif
 
 #ifdef HAVE_SHADOW
 #include <shadow.h>
