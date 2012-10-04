@@ -76,6 +76,30 @@ static const struct blobmsg_policy acl_policy[__UH_UBUS_SA_MAX] = {
 	[UH_UBUS_SA_OBJECTS] = { .name = "objects", .type = BLOBMSG_TYPE_ARRAY },
 };
 
+#ifdef __APPLE__
+#include <mach/mach_time.h>
+
+#define CLOCK_MONOTONIC	0
+
+static void clock_gettime(int type, struct timespec *tv)
+{
+	mach_timebase_info_data_t info;
+	float sec;
+	uint64_t val;
+
+	mach_timebase_info(&info);
+
+	val = mach_absolute_time();
+	tv->tv_nsec = (val * info.numer / info.denom) % 1000000000;
+
+	sec = val;
+	sec *= info.numer;
+	sec /= info.denom;
+	sec /= 1000000000;
+	tv->tv_sec = sec;
+}
+
+#endif
 
 static bool
 uh_ubus_strmatch(const char *str, const char *pat)
