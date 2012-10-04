@@ -16,9 +16,6 @@
  *  limitations under the License.
  */
 
-#define _XOPEN_SOURCE 500	/* strptime() */
-#define _BSD_SOURCE			/* scandir(), timegm() */
-
 #include "uhttpd.h"
 #include "uhttpd-utils.h"
 #include "uhttpd-file.h"

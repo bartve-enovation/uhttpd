@@ -16,9 +16,6 @@
  *  limitations under the License.
  */
 
-#define _XOPEN_SOURCE 500	/* crypt() */
-#define _BSD_SOURCE			/* strcasecmp(), strncasecmp() */
-
 #include "uhttpd.h"
 #include "uhttpd-utils.h"
 

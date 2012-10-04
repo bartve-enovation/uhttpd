@@ -18,6 +18,9 @@
 
 #ifndef _UHTTPD_
 
+#define _BSD_SOURCE
+#define _XOPEN_SOURCE 700
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdbool.h>
