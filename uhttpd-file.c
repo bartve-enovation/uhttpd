@@ -377,7 +377,7 @@ bool uh_file_request(struct client *cl, struct path_info *pi)
 									 pi->stat.st_size));
 
 			/* if request was HTTP 1.1 we'll respond chunked */
-			if ((cl->request.version > 1.0) &&
+			if ((cl->request.version > UH_HTTP_VER_1_0) &&
 				(cl->request.method != UH_HTTP_MSG_HEAD))
 			{
 				ensure_out(uh_http_send(cl, NULL,
@@ -412,7 +412,7 @@ bool uh_file_request(struct client *cl, struct path_info *pi)
 		/* write status */
 		ensure_out(uh_file_response_200(cl, NULL));
 
-		if (cl->request.version > 1.0)
+		if (cl->request.version > UH_HTTP_VER_1_0)
 			ensure_out(uh_http_send(cl, NULL,
 									"Transfer-Encoding: chunked\r\n", -1));
 
