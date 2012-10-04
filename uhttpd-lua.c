@@ -84,7 +84,7 @@ static int uh_lua_send_common(lua_State *L, bool chunked)
 	{
 		if (length > 0)
 		{
-			snprintf(chunk, sizeof(chunk), "%X\r\n", length);
+			snprintf(chunk, sizeof(chunk), "%X\r\n", (int) length);
 
 			ensure_out(rv = uh_raw_send(fd, chunk, strlen(chunk), to));
 			slen += rv;
@@ -517,7 +517,7 @@ bool uh_lua_request(struct client *cl, lua_State *L)
 					   "Content-Length: %i\r\n\r\n"
 					   "Lua raised a runtime error:\n  %s\n",
 					   http_versions[req->version],
-					   31 + strlen(err_str), err_str);
+					   31 + (int) strlen(err_str), err_str);
 
 				break;
 
