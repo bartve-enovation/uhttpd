@@ -24,7 +24,6 @@
 #include <dirent.h>
 #include <sys/stat.h>
 #include <sys/types.h>
-#include <linux/limits.h>
 
 struct mimetype {
 	const char *extn;
