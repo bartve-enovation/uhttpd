@@ -22,6 +22,9 @@
 
 #include "uhttpd-mimetypes.h"
 
+#ifdef __APPLE__
+time_t timegm (struct tm *tm);
+#endif
 
 static const char * uh_file_mime_lookup(const char *path)
 {
