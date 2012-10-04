@@ -578,6 +578,7 @@ static void uh_socket_cb(struct uloop_fd *u, unsigned int events)
 	uh_client_cb(cl, ULOOP_READ);
 }
 
+#if defined(HAVE_CGI) || defined(HAVE_LUA) || defined(HAVE_UBUS)
 static void uh_child_cb(struct uloop_process *p, int rv)
 {
 	struct client *cl = container_of(p, struct client, proc);
@@ -617,6 +618,7 @@ static void uh_timeout_cb(struct uloop_timeout *t)
 		uloop_timeout_set(&cl->timeout, 1000);
 	}
 }
+#endif
 
 static void uh_client_cb(struct client *cl, unsigned int events)
 {
@@ -700,6 +702,7 @@ static void uh_client_cb(struct client *cl, unsigned int events)
 		}
 
 		/* request handler spawned a child, register handler */
+#if defined(HAVE_CGI) || defined(HAVE_LUA) || defined(HAVE_UBUS)
 		if (cl->proc.pid)
 		{
 			D("SRV: Client(%d) child(%d) spawned\n", cl->fd.fd, cl->proc.pid);
@@ -710,6 +713,7 @@ static void uh_client_cb(struct client *cl, unsigned int events)
 			cl->timeout.cb = uh_timeout_cb;
 			uloop_timeout_set(&cl->timeout, conf->script_timeout * 1000);
 		}
+#endif
 
 		/* header processing complete */
 		D("SRV: Client(%d) dispatched\n", cl->fd.fd);
