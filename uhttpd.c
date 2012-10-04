@@ -133,7 +133,9 @@ static int uh_socket_bind(const char *host, const char *port,
 	int status;
 	int bound = 0;
 
+#ifdef linux
 	int tcp_ka_idl, tcp_ka_int, tcp_ka_cnt;
+#endif
 
 	struct listener *l = NULL;
 	struct addrinfo *addrs = NULL, *p = NULL;
@@ -163,14 +165,19 @@ static int uh_socket_bind(const char *host, const char *port,
 		/* TCP keep-alive */
 		if (conf->tcp_keepalive > 0)
 		{
+#ifdef linux
 			tcp_ka_idl = 1;
 			tcp_ka_cnt = 3;
 			tcp_ka_int = conf->tcp_keepalive;
+#endif
 
-			if (setsockopt(sock, SOL_SOCKET, SO_KEEPALIVE, &yes, sizeof(yes)) ||
-			    setsockopt(sock, SOL_TCP, TCP_KEEPIDLE,  &tcp_ka_idl, sizeof(tcp_ka_idl)) ||
-			    setsockopt(sock, SOL_TCP, TCP_KEEPINTVL, &tcp_ka_int, sizeof(tcp_ka_int)) ||
-			    setsockopt(sock, SOL_TCP, TCP_KEEPCNT,   &tcp_ka_cnt, sizeof(tcp_ka_cnt)))
+			if (setsockopt(sock, SOL_SOCKET, SO_KEEPALIVE, &yes, sizeof(yes))
+#ifdef linux
+			    || setsockopt(sock, SOL_TCP, TCP_KEEPIDLE,  &tcp_ka_idl, sizeof(tcp_ka_idl))
+			    || setsockopt(sock, SOL_TCP, TCP_KEEPINTVL, &tcp_ka_int, sizeof(tcp_ka_int))
+			    || setsockopt(sock, SOL_TCP, TCP_KEEPCNT,   &tcp_ka_cnt, sizeof(tcp_ka_cnt))
+#endif
+				)
 			{
 			    fprintf(stderr, "Notice: Unable to enable TCP keep-alive: %s\n",
 			    	strerror(errno));
