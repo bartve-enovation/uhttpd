@@ -34,9 +34,9 @@ IF(HAVE_SHADOW)
 ENDIF()
 
 SET(SOURCES uhttpd.c uhttpd-file.c uhttpd-utils.c)
-SET(LIBS)
-IF(LINUX)
-	SET(LIBS ${LIBS} crypt)
+FIND_LIBRARY(LIBS crypt)
+IF(LIBS STREQUAL "LIBS-NOTFOUND")
+	SET(LIBS "")
 ENDIF()
 SET(TLS_CFLAGS)
 
