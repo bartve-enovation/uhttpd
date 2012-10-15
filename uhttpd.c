@@ -740,7 +740,7 @@ static void uh_client_cb(struct client *cl, unsigned int events)
 }
 
 #ifdef HAVE_TLS
-static inline int uh_inittls(struct config *conf)
+static int uh_inittls(struct config *conf)
 {
 	/* library handle */
 	void *lib;
@@ -790,6 +790,95 @@ static inline int uh_inittls(struct config *conf)
 }
 #endif
 
+#ifdef HAVE_LUA
+static int uh_initlua(struct config *conf)
+{
+	/* library handle */
+	void *lib;
+
+	/* already loaded */
+	if (conf->lua_state != NULL)
+		return 0;
+
+	/* load Lua plugin */
+	if (!(lib = dlopen("uhttpd_lua.so", RTLD_LAZY | RTLD_GLOBAL)))
+	{
+		fprintf(stderr,
+				"Notice: Unable to load Lua plugin - disabling Lua support! "
+				"(Reason: %s)\n", dlerror());
+
+		return 1;
+	}
+	else
+	{
+		/* resolve functions */
+		if (!(conf->lua_init    = dlsym(lib, "uh_lua_init"))    ||
+		    !(conf->lua_close   = dlsym(lib, "uh_lua_close"))   ||
+		    !(conf->lua_request = dlsym(lib, "uh_lua_request")))
+		{
+			fprintf(stderr,
+					"Error: Failed to lookup required symbols "
+					"in Lua plugin: %s\n", dlerror()
+			);
+			exit(1);
+		}
+
+		/* init Lua runtime if handler is specified */
+		if (conf->lua_handler)
+		{
+			/* default lua prefix */
+			if (!conf->lua_prefix)
+				conf->lua_prefix = "/lua";
+
+			conf->lua_state = conf->lua_init(conf);
+		}
+	}
+
+	return 0;
+}
+#endif
+
+#ifdef HAVE_UBUS
+static int uh_initubus(struct config *conf)
+{
+	/* library handle */
+	void *lib;
+
+	/* already loaded */
+	if (conf->ubus_state != NULL)
+		return 0;
+
+	/* load ubus plugin */
+	if (!(lib = dlopen("uhttpd_ubus.so", RTLD_LAZY | RTLD_GLOBAL)))
+	{
+		fprintf(stderr,
+				"Notice: Unable to load ubus plugin - disabling ubus support! "
+				"(Reason: %s)\n", dlerror());
+
+		return 1;
+	}
+	else if (conf->ubus_prefix)
+	{
+		/* resolve functions */
+		if (!(conf->ubus_init    = dlsym(lib, "uh_ubus_init"))    ||
+		    !(conf->ubus_close   = dlsym(lib, "uh_ubus_close"))   ||
+		    !(conf->ubus_request = dlsym(lib, "uh_ubus_request")))
+		{
+			fprintf(stderr,
+					"Error: Failed to lookup required symbols "
+					"in ubus plugin: %s\n", dlerror()
+			);
+			exit(1);
+		}
+
+		/* initialize ubus */
+		conf->ubus_state = conf->ubus_init(conf);
+	}
+
+	return 0;
+}
+#endif
+
 int main (int argc, char **argv)
 {
 	/* working structs */
@@ -812,11 +901,6 @@ int main (int argc, char **argv)
 	int opt;
 	char addr[128];
 	char *port = NULL;
-
-#if defined(HAVE_LUA) || defined(HAVE_TLS) || defined(HAVE_UBUS)
-	/* library handle */
-	void *lib;
-#endif
 
 	/* handle SIGPIPE, SIGINT, SIGTERM */
 	sa.sa_flags = 0;
@@ -1205,64 +1289,15 @@ int main (int argc, char **argv)
 #endif
 
 #ifdef HAVE_LUA
-	/* load Lua plugin */
-	if (!(lib = dlopen("uhttpd_lua.so", RTLD_LAZY | RTLD_GLOBAL)))
-	{
-		fprintf(stderr,
-				"Notice: Unable to load Lua plugin - disabling Lua support! "
-				"(Reason: %s)\n", dlerror());
-	}
-	else
-	{
-		/* resolve functions */
-		if (!(conf.lua_init    = dlsym(lib, "uh_lua_init"))    ||
-		    !(conf.lua_close   = dlsym(lib, "uh_lua_close"))   ||
-		    !(conf.lua_request = dlsym(lib, "uh_lua_request")))
-		{
-			fprintf(stderr,
-					"Error: Failed to lookup required symbols "
-					"in Lua plugin: %s\n", dlerror()
-			);
-			exit(1);
-		}
-
-		/* init Lua runtime if handler is specified */
-		if (conf.lua_handler)
-		{
-			/* default lua prefix */
-			if (!conf.lua_prefix)
-				conf.lua_prefix = "/lua";
-
-			conf.lua_state = conf.lua_init(&conf);
-		}
-	}
+	/* initialize Lua runtime */
+	if (conf.lua_handler)
+		uh_initlua(&conf);
 #endif
 
 #ifdef HAVE_UBUS
-	/* load ubus plugin */
-	if (!(lib = dlopen("uhttpd_ubus.so", RTLD_LAZY | RTLD_GLOBAL)))
-	{
-		fprintf(stderr,
-				"Notice: Unable to load ubus plugin - disabling ubus support! "
-				"(Reason: %s)\n", dlerror());
-	}
-	else if (conf.ubus_prefix)
-	{
-		/* resolve functions */
-		if (!(conf.ubus_init    = dlsym(lib, "uh_ubus_init"))    ||
-		    !(conf.ubus_close   = dlsym(lib, "uh_ubus_close"))   ||
-		    !(conf.ubus_request = dlsym(lib, "uh_ubus_request")))
-		{
-			fprintf(stderr,
-					"Error: Failed to lookup required symbols "
-					"in ubus plugin: %s\n", dlerror()
-			);
-			exit(1);
-		}
-
-		/* initialize ubus */
-		conf.ubus_state = conf.ubus_init(&conf);
-	}
+	/* initialize ubus client */
+	if (conf.ubus_prefix)
+		uh_initubus(&conf);
 #endif
 
 	/* fork (if not disabled) */
