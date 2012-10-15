@@ -79,7 +79,6 @@ struct config {
 	char docroot[PATH_MAX];
 	char *realm;
 	char *file;
-	char *index_file;
 	char *error_handler;
 	int no_symlinks;
 	int no_dirlists;
@@ -204,6 +203,11 @@ struct auth_realm {
 	char user[32];
 	char pass[128];
 	struct auth_realm *next;
+};
+
+struct index_file {
+	const char *name;
+	struct index_file *next;
 };
 
 #ifdef HAVE_CGI

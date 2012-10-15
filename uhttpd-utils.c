@@ -24,14 +24,6 @@
 #endif
 
 
-static char *uh_index_files[] = {
-	"index.html",
-	"index.htm",
-	"default.html",
-	"default.htm"
-};
-
-
 const char * sa_straddr(void *sa)
 {
 	static char str[INET6_ADDRSTRLEN];
@@ -553,6 +545,25 @@ static char * canonpath(const char *path, char *path_resolved)
 	return NULL;
 }
 
+
+struct index_file *uh_index_files = NULL;
+
+struct index_file * uh_index_add(const char *filename)
+{
+	struct index_file *new = NULL;
+
+	if ((filename != NULL) && (new = malloc(sizeof(*new))) != NULL)
+	{
+		new->name = filename;
+		new->next = uh_index_files;
+
+		uh_index_files = new;
+	}
+
+	return new;
+}
+
+
 /* Returns NULL on error.
 ** NB: improperly encoded URL should give client 400 [Bad Syntax]; returning
 ** NULL here causes 404 [Not Found], but that's not too unreasonable. */
@@ -570,6 +581,7 @@ struct path_info * uh_path_lookup(struct client *cl, const char *url)
 	int no_sym = cl->server->conf->no_symlinks;
 	int i = 0;
 	struct stat s;
+	struct index_file *idx;
 
 	/* back out early if url is undefined */
 	if (url == NULL)
@@ -680,21 +692,11 @@ struct path_info * uh_path_lookup(struct client *cl, const char *url)
 
 				p.redirected = 1;
 			}
-			else if (cl->server->conf->index_file)
-			{
-				strncat(buffer, cl->server->conf->index_file, sizeof(buffer));
-
-				if (!stat(buffer, &s) && (s.st_mode & S_IFREG))
-				{
-					memcpy(path_phys, buffer, sizeof(path_phys));
-					memcpy(&p.stat, &s, sizeof(p.stat));
-				}
-			}
 			else
 			{
-				for (i = 0; i < array_size(uh_index_files); i++)
+				for (idx = uh_index_files; idx; idx = idx->next)
 				{
-					strncat(buffer, uh_index_files[i], sizeof(buffer));
+					strncat(buffer, idx->name, sizeof(buffer));
 
 					if (!stat(buffer, &s) && (s.st_mode & S_IFREG))
 					{

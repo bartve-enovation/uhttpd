@@ -85,7 +85,13 @@ static void uh_config_parse(struct config *conf)
 				   	continue;
 				}
 
-				conf->index_file = strdup(col1);
+				if (!uh_index_add(strdup(col1)))
+				{
+					fprintf(stderr,
+					        "Unable to add index filename %s: "
+					        "Out of memory\n", col1
+					);
+				}
 			}
 			else if (!strncmp(line, "E404:", 5))
 			{
@@ -951,7 +957,7 @@ int main (int argc, char **argv)
 							optarg);
 					exit(1);
 				}
-				conf.index_file = optarg;
+				uh_index_add(optarg);
 				break;
 
 			/* don't follow symlinks */
@@ -1109,7 +1115,7 @@ int main (int argc, char **argv)
 #endif
 					"	-h directory    Specify the document root, default is '.'\n"
 					"	-E string       Use given virtual URL as 404 error handler\n"
-					"	-I string       Use given filename as index page for directories\n"
+					"	-I string       Use given filename as index for directories, multiple allowed\n"
 					"	-S              Do not follow symbolic links outside of the docroot\n"
 					"	-D              Do not allow directory listings, send 403 instead\n"
 					"	-R              Enable RFC1918 filter\n"
@@ -1176,6 +1182,15 @@ int main (int argc, char **argv)
 	/* default network timeout */
 	if (conf.network_timeout <= 0)
 		conf.network_timeout = 30;
+
+	/* default index files */
+	if (!uh_index_files)
+	{
+		uh_index_add("index.html");
+		uh_index_add("index.htm");
+		uh_index_add("default.html");
+		uh_index_add("default.htm");
+	}
 
 #if defined(HAVE_CGI) || defined(HAVE_LUA) || defined(HAVE_UBUS)
 	/* default script timeout */

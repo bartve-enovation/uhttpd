@@ -117,6 +117,9 @@ int uh_auth_check(
 );
 
 
+extern struct index_file *uh_index_files;
+struct index_file * uh_index_add(const char *filename);
+
 struct path_info * uh_path_lookup(struct client *cl, const char *url);
 
 struct listener * uh_listener_add(int sock, struct config *conf);
