@@ -1,7 +1,7 @@
 /*
  * uhttpd - Tiny single-threaded httpd - Main header
  *
- *   Copyright (C) 2010 Jo-Philipp Wich <xm@subsignal.org>
+ *   Copyright (C) 2010-2012 Jo-Philipp Wich <xm@subsignal.org>
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -28,6 +28,7 @@
 #include <strings.h>
 #include <unistd.h>
 #include <signal.h>
+#include <limits.h>
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <sys/select.h>
