@@ -376,6 +376,17 @@ static struct http_request * uh_http_header_parse(struct client *cl,
 	return NULL;
 }
 
+static bool uh_http_header_check_method(const char *buf, ssize_t rlen)
+{
+	int i;
+
+	for (i = 0; i < sizeof(http_methods)/sizeof(http_methods[0]); i++)
+		if (!strncmp(buf, http_methods[i], min(rlen, strlen(http_methods[i]))))
+			return true;
+
+	return false;
+}
+
 
 static struct http_request * uh_http_header_recv(struct client *cl)
 {
@@ -396,6 +407,15 @@ static struct http_request * uh_http_header_recv(struct client *cl)
 		if (rlen <= 0)
 		{
 			D("SRV: Client(%d) dead [%s]\n", cl->fd.fd, strerror(errno));
+			return NULL;
+		}
+
+		/* first read attempt, check for valid method signature */
+		if ((bufptr == cl->httpbuf.buf) &&
+		    !uh_http_header_check_method(bufptr, rlen))
+		{
+			D("SRV: Client(%d) no valid HTTP method, abort\n", cl->fd.fd);
+			uh_http_response(cl, 400, "Bad Request");
 			return NULL;
 		}
 
@@ -553,6 +573,7 @@ static void uh_listener_cb(struct uloop_fd *u, unsigned int events)
 					D("SRV: Client(%d) SSL handshake failed, drop\n", new_fd);
 
 					/* remove from global client list */
+					uh_http_response(cl, 400, "Bad Request");
 					uh_client_remove(cl);
 					return;
 				}
